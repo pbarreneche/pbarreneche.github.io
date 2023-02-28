@@ -1,7 +1,3 @@
-# pbarreneche.github.io
-Pablo Barreneche
-
-
 # CV-Proyecto_Final
 
 Este es el proyecto final de FrontEnd de Argentina Programa 4.0.

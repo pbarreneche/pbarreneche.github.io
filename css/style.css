@@ -326,6 +326,7 @@ body {
     width: var(--anchoDeCaja);
     height: 200px;
     margin: 30px auto;
+    margin-bottom: 70PX;
     border-radius: 20px;
     background-color: rgba(4, 24, 48, 0.23);
     display: flex;
@@ -522,6 +523,7 @@ body {
         display: grid;
         grid-template-columns: 25% 25% 25% 25%;
         grid-template-rows: 250px 20px 250px;
+        margin-bottom: 15px;
     }
 
     .contacto {
