@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pablets Broadcast</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="min-h-screen flex flex-col bg-[#070b14] text-slate-100">
+  <!-- Input oculto para cargar archivos de audio en cualquier botón -->
+  <input id="audioFileInput" type="file" accept="audio/*" class="hidden" />
+
+  <!-- Encabezado superior -->
+  <header class="sticky top-0 z-30 bg-slate-950/95 backdrop-blur border-b border-slate-800/90 px-3 py-2">
+    <div class="max-w-[1920px] mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20 shrink-0">
+          <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v18"></path>
+            <path d="M8 7v10"></path>
+            <path d="M16 7v10"></path>
+            <path d="M4 10v4"></path>
+            <path d="M20 10v4"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="text-sm sm:text-base font-extrabold tracking-tight text-white">
+              Pablets Broadcast
+            </h1>
+            <button
+              id="togglePreservePitchBtn"
+              type="button"
+              title="Alternar entre mantener el tono al cambiar BPM o variar tono con BPM"
+              class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-violet-500/20 hover:bg-violet-500/30 text-violet-200 border border-violet-400/45 cursor-pointer transition"
+            >
+              Tono: Fijo (BPM Real)
+            </button>
+            <button
+              id="toggleTransitionModeBtn"
+              type="button"
+              title="Alternar entre Corte Automático (Cut) y Fades Configurables"
+              class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/35 cursor-pointer transition"
+            >
+              Modo: Corte Automático
+            </button>
+            <button
+              id="openFadesModalBtn"
+              type="button"
+              title="Abrir apartado global de Fades (Fade In, Fade Out y Fade Interactivo con Shift+Tecla)"
+              class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/45 cursor-pointer transition"
+            >
+              Fades (In 250 / Out 500 / Int 1500ms)
+            </button>
+            <button
+              id="selectConfigFolderBtn"
+              type="button"
+              title="Elegir carpeta local donde guardar todas las configuraciones, paletas, fades, CUEs y audios"
+              class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-600/25 hover:bg-emerald-500/35 text-emerald-200 border border-emerald-400/45 cursor-pointer transition"
+            >
+              📁 Carpeta Config: Sin elegir
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400 hidden xl:block">
+            <kbd class="px-1 py-0.5 rounded bg-slate-800 text-amber-300 font-mono text-[10px]">Shift+Tecla</kbd> Fade Interactivo + Stop ·
+            <kbd class="px-1 py-0.5 rounded bg-slate-800 text-sky-300 font-mono text-[10px]">Z/X/C</kbd> CUE 1-2-3 L ·
+            <kbd class="px-1 py-0.5 rounded bg-slate-800 text-indigo-300 font-mono text-[10px]">Num 1/2/3</kbd> CUE 1-2-3 R ·
+            <kbd class="px-1 py-0.5 rounded bg-slate-800 text-emerald-300 font-mono text-[10px]">+/-</kbd> Vol ·
+            <kbd class="px-1 py-0.5 rounded bg-slate-800 text-violet-300 font-mono text-[10px]">↑/↓</kbd> BPM ·
+            <kbd class="px-1 py-0.5 rounded bg-slate-800 text-rose-300 font-mono text-[10px]">Esc</kbd> Stop L ·
+            <kbd class="px-1 py-0.5 rounded bg-slate-800 text-rose-300 font-mono text-[10px]">Bksp</kbd> Stop R
+          </p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Buscador global por fracción de palabra en todas las paletas -->
+        <div id="songSearchContainer" class="relative w-52 sm:w-64">
+          <input
+            id="songSearchInput"
+            type="search"
+            autocomplete="off"
+            placeholder="Buscar tema (ej: Blin)..."
+            aria-label="Buscar canción por fracción de palabra"
+            class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-amber-100 placeholder:text-slate-500 outline-none"
+          />
+          <div
+            id="songSearchResults"
+            class="hidden absolute left-0 right-0 mt-1.5 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-h-72 overflow-y-auto z-50 divide-y divide-slate-800"
+          ></div>
+        </div>
+
+        <div class="hidden 2xl:flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1">
+          <span class="text-[10px] font-mono uppercase text-slate-400">Activo:</span>
+          <span id="selectedPadSummary" class="text-xs font-mono font-bold text-sky-300">L 01 [1] · VOL 100%</span>
+          <button
+            id="selectedBpmDownBtn"
+            type="button"
+            title="Bajar BPM (Flecha Abajo ↓ · Shift = Canal R)"
+            class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-violet-200 font-mono text-[11px] font-bold cursor-pointer"
+          >
+            -
+          </button>
+          <span
+            id="selectedBpmBadge"
+            title="Clic para restaurar el BPM real detectado"
+            class="px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-200 border border-violet-400/35 font-mono text-[11px] font-bold cursor-pointer"
+          >
+            120.0 BPM
+          </span>
+          <button
+            id="selectedBpmUpBtn"
+            type="button"
+            title="Subir BPM (Flecha Arriba ↑ · Shift = Canal R)"
+            class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-violet-200 font-mono text-[11px] font-bold cursor-pointer"
+          >
+            +
+          </button>
+        </div>
+
+        <button
+          id="openAudioModalBtn"
+          type="button"
+          class="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold shadow-sm transition cursor-pointer flex items-center gap-1.5"
+        >
+          <span>Placas y Canales</span>
+        </button>
+
+        <button
+          id="openInstallModalBtn"
+          type="button"
+          class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition cursor-pointer"
+        >
+          Instalar en Windows
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Cuerpo principal: Botonera L | Vúmetro Central + Limitador | Botonera R -->
+  <main class="flex-1 max-w-[1920px] w-full mx-auto p-3 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_168px_minmax(0,1fr)] gap-3 items-stretch">
+    <!-- ===================================================================== -->
+    <!-- BOTONERA IZQUIERDA (CANAL L)                                          -->
+    <!-- ===================================================================== -->
+    <section
+      id="bankSection-L"
+      aria-label="Botonera Izquierda Canal L"
+      class="bg-slate-900/65 border border-slate-800 rounded-2xl p-3 space-y-2.5 shadow-xl flex flex-col justify-between"
+    >
+      <div class="space-y-2.5">
+        <!-- Cabecera Canal L -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-1.5 border-b border-slate-800/80">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-400/40 font-mono font-extrabold text-xs">
+              BOTONERA 1 · L
+            </span>
+            <span id="bankRoutingBadge-L" class="text-[11px] font-mono text-slate-400 truncate max-w-[180px]">
+              Salida predeterminada · CH1
+            </span>
+            <span class="hidden sm:inline-block text-[10px] font-mono text-amber-300/90 bg-amber-500/10 border border-amber-400/25 px-1.5 py-0.5 rounded">
+              CUEs: Z · X · C
+            </span>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <button
+              id="testToneBtn-L"
+              type="button"
+              class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-200 border border-slate-700 text-xs font-semibold cursor-pointer"
+            >
+              Tono L
+            </button>
+            <button
+              id="stopBankBtn-L"
+              type="button"
+              title="Detener todo el Canal Izquierdo (Esc)"
+              class="px-2.5 py-1 rounded-lg bg-rose-600/90 hover:bg-rose-500 text-white text-xs font-bold cursor-pointer"
+            >
+              STOP L (Esc)
+            </button>
+          </div>
+        </div>
+
+        <!-- Gestor de Paletas en Lado Izquierdo -->
+        <div class="bg-slate-950/75 border border-slate-800/90 rounded-xl p-2 space-y-1.5">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button
+              id="prevPaletteBtn-L"
+              type="button"
+              title="Paleta anterior L (RePág / PageUp)"
+              class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-mono text-[11px] font-bold cursor-pointer"
+            >
+              ◀
+            </button>
+            <select
+              id="paletteSelect-L"
+              aria-label="Seleccionar paleta izquierda"
+              class="flex-1 min-w-[135px] bg-slate-900 border border-slate-700 focus:border-sky-400 rounded-lg px-2 py-1 text-xs font-bold text-white outline-none"
+            ></select>
+            <button
+              id="nextPaletteBtn-L"
+              type="button"
+              title="Paleta siguiente L (AvPág / PageDown)"
+              class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-mono text-[11px] font-bold cursor-pointer"
+            >
+              ▶
+            </button>
+            <button
+              id="newPaletteBtn-L"
+              type="button"
+              title="Crear nueva paleta compartida desde el lado Izquierdo"
+              class="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold cursor-pointer"
+            >
+              + Nueva
+            </button>
+            <button
+              id="duplicatePaletteBtn-L"
+              type="button"
+              class="px-2 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold cursor-pointer"
+            >
+              Duplicar
+            </button>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <input
+              id="paletteNameInput-L"
+              type="text"
+              maxlength="40"
+              placeholder="Nombre paleta izquierda..."
+              class="flex-1 min-w-0 bg-slate-900 border border-slate-700 focus:border-sky-400 rounded-lg px-2 py-1 text-xs text-white outline-none"
+            />
+            <button
+              id="renamePaletteBtn-L"
+              type="button"
+              class="px-2 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 border border-sky-400/40 text-[11px] font-bold cursor-pointer shrink-0"
+            >
+              Renombrar
+            </button>
+            <button
+              id="deletePaletteBtn-L"
+              type="button"
+              class="px-2 py-1 rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-700/50 text-[11px] font-semibold cursor-pointer shrink-0"
+            >
+              Borrar
+            </button>
+            <button
+              id="paletteFadeGearBtn-L"
+              type="button"
+              title="Configurar Fade exclusivo de esta paleta (0 ms a 10000 ms)"
+              class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 text-[11px] font-mono font-bold cursor-pointer shrink-0"
+            >
+              ⚙ Fade
+            </button>
+          </div>
+
+          <!-- Panel desplegable de Fade por paleta -->
+          <div id="paletteFadePanel-L" class="hidden pt-1.5 border-t border-slate-800/80 space-y-1.5">
+            <div class="flex items-center justify-between text-[10px] font-mono text-amber-300">
+              <span>Fade de paleta (0 ms – 10000 ms)</span>
+              <span id="paletteFadeSecLabel-L" class="text-slate-400">0.00 s</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <input
+                id="paletteFadeSlider-L"
+                type="range"
+                min="0"
+                max="10000"
+                step="10"
+                value="0"
+                class="studio-slider flex-1"
+              />
+              <input
+                id="paletteFadeNumber-L"
+                type="number"
+                min="0"
+                max="10000"
+                step="10"
+                value="0"
+                class="w-20 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded px-1.5 py-0.5 font-mono text-right text-[11px] text-amber-200 outline-none"
+              />
+              <span class="font-mono text-[10px] text-slate-400">ms</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Línea de progreso maestra con FORMA DE ONDA -->
+        <div class="space-y-1">
+          <div class="flex items-center justify-between gap-2 text-[11px] font-mono">
+            <span id="bankNowPlayingTitle-L" class="text-slate-300 font-bold truncate">Canal L en espera</span>
+            <span id="bankNowPlayingTime-L" class="text-emerald-300 shrink-0">0.0s / 0.0s (0%)</span>
+          </div>
+          <div
+            id="bankMasterSeekBar-L"
+            role="slider"
+            aria-label="Progreso con forma de onda del Canal Izquierdo"
+            class="bank-master-seek-bar seek-disabled"
+          >
+            <canvas id="bankWaveformCanvas-L" class="w-full h-full block pointer-events-none"></canvas>
+            <div id="bankMasterPlayhead-L" class="hidden absolute top-0 bottom-0 w-0.5 bg-white shadow-[0_0_8px_#ffffff] pointer-events-none" style="left: 0%;"></div>
+            <div id="bankMasterSeekHoverMarker-L" class="hidden absolute top-0 bottom-0 w-0.5 bg-amber-300 shadow-[0_0_8px_#fcd34d] pointer-events-none"></div>
+            <span id="bankMasterSeekHoverLabel-L" class="hidden absolute inset-0 items-center justify-center font-mono font-extrabold text-[10px] text-white bg-slate-950/55 pointer-events-none"></span>
+          </div>
+        </div>
+
+        <!-- Cuadrícula 5x3 de Botones Izquierdos -->
+        <div id="padGrid-L" class="pad-grid-5x3"></div>
+      </div>
+
+      <!-- Decontador con números grandes de lo que falta para terminar (Canal L) -->
+      <div class="mt-2 pt-2 border-t border-slate-800/90 bg-slate-950/85 rounded-xl px-3 py-1.5 flex items-center justify-between">
+        <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">Restante L</span>
+        <div id="bankCountdown-L" class="text-3xl sm:text-4xl font-mono font-black tabular-nums text-slate-500">00.0s</div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- COLUMNA CENTRAL: VÚMETROS + LIMITADORES                               -->
+    <!-- ===================================================================== -->
+    <aside
+      aria-label="Vúmetros y Limitadores de Audio"
+      class="bg-slate-900/85 border border-slate-800 rounded-2xl p-2.5 shadow-xl flex flex-col justify-between gap-2.5"
+    >
+      <div class="text-center border-b border-slate-800 pb-1.5 space-y-1">
+        <div id="vuHeaderTitle" class="font-mono font-extrabold text-[11px] tracking-wider text-sky-300 uppercase">Vúmetro Master</div>
+        <div id="vuHeaderSubtitle" class="font-mono text-[10px] text-slate-400">Estéreo L / R</div>
+      </div>
+
+      <!-- Barras verticales de Vúmetro L y R con escala dB -->
+      <div class="flex-1 min-h-[250px] flex items-stretch justify-center gap-2 px-1 py-1 bg-slate-950/90 border border-slate-800/90 rounded-xl">
+        <!-- Canal L Meter -->
+        <div class="flex flex-col items-center gap-1 flex-1">
+          <div class="flex flex-col items-center gap-0.5">
+            <span id="vuSideLetter-L" class="font-mono font-extrabold text-xs text-sky-300">L</span>
+            <span id="meterModeBadge-L" class="meter-mode-pill bg-sky-500/20 text-sky-200 border border-sky-400/35">RL</span>
+          </div>
+          <div class="relative flex-1 w-5 rounded-md bg-slate-900 border border-slate-700/80 overflow-hidden flex flex-col justify-end">
+            <canvas id="masterVuCanvas-L" width="24" height="260" class="w-full h-full block"></canvas>
+            <div id="limiterLine-L" class="absolute left-0 right-0 h-0.5 bg-amber-400 shadow-[0_0_6px_#fbbf24] pointer-events-none" style="bottom: 85%;"></div>
+          </div>
+          <span id="masterDbReadout-L" class="font-mono text-[10px] text-slate-300">-∞ dB</span>
+          <span id="limiterSideBadge-L" class="font-mono text-[9px] text-amber-300 font-bold">LIM -9dB</span>
+        </div>
+
+        <!-- Escala central en dB -->
+        <div class="flex flex-col justify-between py-7 font-mono text-[9px] text-slate-500 text-center select-none">
+          <span class="text-rose-400 font-bold">0</span>
+          <span>-3</span>
+          <span>-6</span>
+          <span class="text-amber-300 font-bold">-9</span>
+          <span>-12</span>
+          <span>-18</span>
+          <span>-24</span>
+          <span>-36</span>
+          <span>-48</span>
+        </div>
+
+        <!-- Canal R Meter -->
+        <div class="flex flex-col items-center gap-1 flex-1">
+          <div class="flex flex-col items-center gap-0.5">
+            <span id="vuSideLetter-R" class="font-mono font-extrabold text-xs text-indigo-300">R</span>
+            <span id="meterModeBadge-R" class="meter-mode-pill bg-indigo-500/20 text-indigo-200 border border-indigo-400/35">RL</span>
+          </div>
+          <div class="relative flex-1 w-5 rounded-md bg-slate-900 border border-slate-700/80 overflow-hidden flex flex-col justify-end">
+            <canvas id="masterVuCanvas-R" width="24" height="260" class="w-full h-full block"></canvas>
+            <div id="limiterLine-R" class="absolute left-0 right-0 h-0.5 bg-amber-400 shadow-[0_0_6px_#fbbf24] pointer-events-none" style="bottom: 85%;"></div>
+          </div>
+          <span id="masterDbReadout-R" class="font-mono text-[10px] text-slate-300">-∞ dB</span>
+          <span id="limiterSideBadge-R" class="font-mono text-[9px] text-amber-300 font-bold">LIM -9dB</span>
+        </div>
+      </div>
+
+      <!-- Control de Limitadores por lado -->
+      <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-2 space-y-2">
+        <div class="grid grid-cols-2 gap-1 text-[9px] font-mono">
+          <label class="flex items-center gap-1 bg-slate-900/90 border border-slate-800 rounded px-1.5 py-1 cursor-pointer">
+            <input
+              id="limiterEnabledCheckbox-L"
+              type="checkbox"
+              checked
+              class="w-3 h-3 rounded accent-sky-400 cursor-pointer shrink-0"
+            />
+            <span class="text-sky-200 font-bold truncate">Lim L</span>
+          </label>
+          <label class="flex items-center gap-1 bg-slate-900/90 border border-slate-800 rounded px-1.5 py-1 cursor-pointer">
+            <input
+              id="limiterEnabledCheckbox-R"
+              type="checkbox"
+              checked
+              class="w-3 h-3 rounded accent-indigo-400 cursor-pointer shrink-0"
+            />
+            <span class="text-indigo-200 font-bold truncate">Lim R</span>
+          </label>
+        </div>
+
+        <label class="flex items-center justify-between gap-1 cursor-pointer">
+          <span class="text-[10px] leading-tight font-semibold text-slate-300">Umbral:</span>
+          <strong id="limiterLabelDbValue" class="text-amber-300 font-mono text-[11px]">-9 dB</strong>
+        </label>
+
+        <div class="space-y-1">
+          <input
+            id="limiterThresholdSlider"
+            type="range"
+            min="-24"
+            max="0"
+            step="0.5"
+            value="-9"
+            aria-label="Umbral del limitador en decibeles"
+            class="studio-slider w-full"
+          />
+          <div class="flex items-center justify-between gap-1">
+            <input
+              id="limiterThresholdNumber"
+              type="number"
+              min="-24"
+              max="0"
+              step="0.5"
+              value="-9"
+              aria-label="Valor en dB del limitador"
+              class="w-16 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded px-1.5 py-0.5 font-mono text-right text-xs text-amber-300 outline-none"
+            />
+            <span class="font-mono text-[10px] text-slate-400">dB</span>
+            <button
+              id="saveLimiterBtn"
+              type="button"
+              title="Guardar configuración de limitadores L y R"
+              class="px-2 py-0.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-mono font-extrabold text-[10px] cursor-pointer transition"
+            >
+              Guardar
+            </button>
+          </div>
+        </div>
+
+        <div id="limiterReductionBadge" class="text-center font-mono text-[10px] text-emerald-300 bg-slate-900/90 rounded py-0.5 border border-slate-800">
+          LIMITADORES L/R ON (-9.0 dB)
+        </div>
+      </div>
+
+      <!-- Hora actual con segundos debajo del vúmetro -->
+      <div class="bg-slate-950/95 border border-slate-800 rounded-xl px-2 py-1.5 text-center">
+        <div class="font-mono text-[9px] uppercase tracking-wider text-slate-500">Hora</div>
+        <div id="masterClockReadout" class="font-mono font-extrabold text-sm tabular-nums text-sky-200">00:00:00</div>
+      </div>
+    </aside>
+
+    <!-- ===================================================================== -->
+    <!-- BOTONERA DERECHA (CANAL R)                                            -->
+    <!-- ===================================================================== -->
+    <section
+      id="bankSection-R"
+      aria-label="Botonera Derecha Canal R"
+      class="bg-slate-900/65 border border-slate-800 rounded-2xl p-3 space-y-2.5 shadow-xl flex flex-col justify-between"
+    >
+      <div class="space-y-2.5">
+        <!-- Cabecera Canal R -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-1.5 border-b border-slate-800/80">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-400/40 font-mono font-extrabold text-xs">
+              BOTONERA 2 · R
+            </span>
+            <span id="bankRoutingBadge-R" class="text-[11px] font-mono text-slate-400 truncate max-w-[180px]">
+              Salida predeterminada · CH2
+            </span>
+            <span class="hidden sm:inline-block text-[10px] font-mono text-indigo-300/90 bg-indigo-500/10 border border-indigo-400/25 px-1.5 py-0.5 rounded">
+              CUEs: Num 1 · 2 · 3
+            </span>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <button
+              id="testToneBtn-R"
+              type="button"
+              class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-200 border border-slate-700 text-xs font-semibold cursor-pointer"
+            >
+              Tono R
+            </button>
+            <button
+              id="stopBankBtn-R"
+              type="button"
+              title="Detener todo el Canal Derecho (Backspace)"
+              class="px-2.5 py-1 rounded-lg bg-rose-600/90 hover:bg-rose-500 text-white text-xs font-bold cursor-pointer"
+            >
+              STOP R (Bksp)
+            </button>
+          </div>
+        </div>
+
+        <!-- Gestor de Paletas en Lado Derecho -->
+        <div class="bg-slate-950/75 border border-slate-800/90 rounded-xl p-2 space-y-1.5">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button
+              id="prevPaletteBtn-R"
+              type="button"
+              title="Paleta anterior R (Shift + RePág)"
+              class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-mono text-[11px] font-bold cursor-pointer"
+            >
+              ◀
+            </button>
+            <select
+              id="paletteSelect-R"
+              aria-label="Seleccionar paleta derecha"
+              class="flex-1 min-w-[135px] bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-lg px-2 py-1 text-xs font-bold text-white outline-none"
+            ></select>
+            <button
+              id="nextPaletteBtn-R"
+              type="button"
+              title="Paleta siguiente R (Shift + AvPág)"
+              class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-mono text-[11px] font-bold cursor-pointer"
+            >
+              ▶
+            </button>
+            <button
+              id="newPaletteBtn-R"
+              type="button"
+              title="Crear nueva paleta compartida desde el lado Derecho"
+              class="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold cursor-pointer"
+            >
+              + Nueva
+            </button>
+            <button
+              id="duplicatePaletteBtn-R"
+              type="button"
+              class="px-2 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold cursor-pointer"
+            >
+              Duplicar
+            </button>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <input
+              id="paletteNameInput-R"
+              type="text"
+              maxlength="40"
+              placeholder="Nombre paleta derecha..."
+              class="flex-1 min-w-0 bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-lg px-2 py-1 text-xs text-white outline-none"
+            />
+            <button
+              id="renamePaletteBtn-R"
+              type="button"
+              class="px-2 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-200 border border-indigo-400/40 text-[11px] font-bold cursor-pointer shrink-0"
+            >
+              Renombrar
+            </button>
+            <button
+              id="deletePaletteBtn-R"
+              type="button"
+              class="px-2 py-1 rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-700/50 text-[11px] font-semibold cursor-pointer shrink-0"
+            >
+              Borrar
+            </button>
+            <button
+              id="paletteFadeGearBtn-R"
+              type="button"
+              title="Configurar Fade exclusivo de esta paleta (0 ms a 10000 ms)"
+              class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 text-[11px] font-mono font-bold cursor-pointer shrink-0"
+            >
+              ⚙ Fade
+            </button>
+          </div>
+
+          <!-- Panel desplegable de Fade por paleta -->
+          <div id="paletteFadePanel-R" class="hidden pt-1.5 border-t border-slate-800/80 space-y-1.5">
+            <div class="flex items-center justify-between text-[10px] font-mono text-amber-300">
+              <span>Fade de paleta (0 ms – 10000 ms)</span>
+              <span id="paletteFadeSecLabel-R" class="text-slate-400">0.00 s</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <input
+                id="paletteFadeSlider-R"
+                type="range"
+                min="0"
+                max="10000"
+                step="10"
+                value="0"
+                class="studio-slider flex-1"
+              />
+              <input
+                id="paletteFadeNumber-R"
+                type="number"
+                min="0"
+                max="10000"
+                step="10"
+                value="0"
+                class="w-20 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded px-1.5 py-0.5 font-mono text-right text-[11px] text-amber-200 outline-none"
+              />
+              <span class="font-mono text-[10px] text-slate-400">ms</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Línea de progreso maestra con FORMA DE ONDA -->
+        <div class="space-y-1">
+          <div class="flex items-center justify-between gap-2 text-[11px] font-mono">
+            <span id="bankNowPlayingTitle-R" class="text-slate-300 font-bold truncate">Canal R en espera</span>
+            <span id="bankNowPlayingTime-R" class="text-emerald-300 shrink-0">0.0s / 0.0s (0%)</span>
+          </div>
+          <div
+            id="bankMasterSeekBar-R"
+            role="slider"
+            aria-label="Progreso con forma de onda del Canal Derecho"
+            class="bank-master-seek-bar seek-disabled"
+          >
+            <canvas id="bankWaveformCanvas-R" class="w-full h-full block pointer-events-none"></canvas>
+            <div id="bankMasterPlayhead-R" class="hidden absolute top-0 bottom-0 w-0.5 bg-white shadow-[0_0_8px_#ffffff] pointer-events-none" style="left: 0%;"></div>
+            <div id="bankMasterSeekHoverMarker-R" class="hidden absolute top-0 bottom-0 w-0.5 bg-amber-300 shadow-[0_0_8px_#fcd34d] pointer-events-none"></div>
+            <span id="bankMasterSeekHoverLabel-R" class="hidden absolute inset-0 items-center justify-center font-mono font-extrabold text-[10px] text-white bg-slate-950/55 pointer-events-none"></span>
+          </div>
+        </div>
+
+        <!-- Cuadrícula 5x3 de Botones Derechos -->
+        <div id="padGrid-R" class="pad-grid-5x3"></div>
+      </div>
+
+      <!-- Decontador con números grandes de lo que falta para terminar (Canal R) -->
+      <div class="mt-2 pt-2 border-t border-slate-800/90 bg-slate-950/85 rounded-xl px-3 py-1.5 flex items-center justify-between">
+        <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">Restante R</span>
+        <div id="bankCountdown-R" class="text-3xl sm:text-4xl font-mono font-black tabular-nums text-slate-500">00.0s</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Menú contextual (Clic derecho sobre cualquier botón) con 3 MODOS DE DISPARO + 3 PUNTOS CUE + BUCLE -->
+  <div
+    id="padContextMenu"
+    class="hidden fixed z-50 w-96 max-w-[95vw] max-h-[92vh] overflow-y-auto bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-3.5 space-y-3 text-xs"
+    role="dialog"
+    aria-label="Configuración del botón"
+  >
+    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+      <div>
+        <div id="ctxPadTitle" class="font-mono font-extrabold text-sm text-white">L 01 [1]</div>
+        <div id="ctxPadFileInfo" class="font-mono text-[10px] text-slate-400 truncate max-w-[260px]">Sin audio cargado</div>
+      </div>
+      <button
+        id="ctxCloseBtn"
+        type="button"
+        class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold cursor-pointer"
+      >
+        ✕
+      </button>
+    </div>
+
+    <div class="flex items-center gap-1.5">
+      <button
+        id="ctxLoadAudioBtn"
+        type="button"
+        class="flex-1 py-1.5 px-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold cursor-pointer transition"
+      >
+        Cargar Audio
+      </button>
+      <button
+        id="ctxClearAudioBtn"
+        type="button"
+        class="py-1.5 px-2.5 rounded-lg bg-rose-950/90 hover:bg-rose-900 text-rose-200 border border-rose-700/50 font-semibold cursor-pointer transition"
+      >
+        Limpiar
+      </button>
+    </div>
+
+    <div class="space-y-1">
+      <label for="ctxLabelInput" class="block font-mono text-[10px] uppercase text-slate-400">Etiqueta del botón</label>
+      <input
+        id="ctxLabelInput"
+        type="text"
+        maxlength="42"
+        class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg px-2.5 py-1.5 text-white outline-none"
+      />
+    </div>
+
+    <div class="space-y-1.5">
+      <div class="flex items-center justify-between">
+        <span class="font-mono text-[10px] uppercase text-slate-400">Color del botón (se respeta en L y R)</span>
+        <input
+          id="ctxCustomColorInput"
+          type="color"
+          aria-label="Color personalizado"
+          class="w-7 h-5 rounded bg-transparent border-0 cursor-pointer"
+        />
+      </div>
+      <div id="ctxColorSwatches" class="grid grid-cols-8 gap-1.5"></div>
+    </div>
+
+    <!-- 3 PALOMITAS DE MODO DE DISPARO DEL BOTÓN -->
+    <div class="space-y-1.5 bg-slate-950/80 border border-sky-500/30 rounded-xl p-2.5">
+      <div class="font-mono text-[10px] uppercase font-bold text-sky-300">Modo de disparo del botón</div>
+      <div class="space-y-1.5">
+        <label class="flex items-start gap-2 p-1.5 rounded-lg bg-slate-900/90 border border-slate-800 hover:border-slate-700 cursor-pointer select-none">
+          <input
+            id="ctxModeNormalChk"
+            type="checkbox"
+            checked
+            class="mt-0.5 w-4 h-4 rounded accent-sky-400 cursor-pointer shrink-0"
+          />
+          <div>
+            <div class="font-mono font-bold text-xs text-white">Modo Normal</div>
+            <div class="text-[10px] text-slate-400">Dispara el audio y lo reinicia si volvés a tocarlo.</div>
+          </div>
+        </label>
+
+        <label class="flex items-start gap-2 p-1.5 rounded-lg bg-slate-900/90 border border-slate-800 hover:border-slate-700 cursor-pointer select-none">
+          <input
+            id="ctxModeSingleChk"
+            type="checkbox"
+            class="mt-0.5 w-4 h-4 rounded accent-amber-400 cursor-pointer shrink-0"
+          />
+          <div>
+            <div class="font-mono font-bold text-xs text-amber-200">Modo Single (Play / Stop)</div>
+            <div class="text-[10px] text-slate-400">Lo tocás y arranca; lo volvés a tocar y para.</div>
+          </div>
+        </label>
+
+        <label class="flex items-start gap-2 p-1.5 rounded-lg bg-slate-900/90 border border-slate-800 hover:border-slate-700 cursor-pointer select-none">
+          <input
+            id="ctxModeSamplerChk"
+            type="checkbox"
+            class="mt-0.5 w-4 h-4 rounded accent-emerald-400 cursor-pointer shrink-0"
+          />
+          <div>
+            <div class="font-mono font-bold text-xs text-emerald-200">Modo Sampler (Mantener presionado)</div>
+            <div class="text-[10px] text-slate-400">Mientras lo mantenés presionado suena; al soltarlo, para.</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Bucle (∞) -->
+    <div class="flex items-center justify-between bg-slate-950/70 border border-slate-800 rounded-xl p-2.5">
+      <label class="flex items-center gap-2 cursor-pointer select-none">
+        <input
+          id="ctxBucleCheckbox"
+          type="checkbox"
+          class="w-4 h-4 rounded accent-emerald-400 cursor-pointer"
+        />
+        <span class="font-mono font-bold text-xs text-emerald-300">Bucle ∞</span>
+      </label>
+      <span class="font-mono text-[10px] text-slate-400">Repite al terminar</span>
+    </div>
+
+    <!-- Volumen individual -->
+    <div class="space-y-1 bg-slate-950/70 border border-slate-800 rounded-xl p-2.5">
+      <div class="flex items-center justify-between">
+        <span class="font-mono text-[10px] uppercase text-slate-400">Volumen individual</span>
+        <span id="ctxVolValue" class="font-mono font-bold text-emerald-300">100%</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="ctxVolMinusBtn" type="button" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono font-bold cursor-pointer">-</button>
+        <input id="ctxVolSlider" type="range" min="0" max="100" value="100" class="studio-slider flex-1" />
+        <button id="ctxVolPlusBtn" type="button" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono font-bold cursor-pointer">+</button>
+      </div>
+    </div>
+
+    <!-- Pitch / Velocidad en BPM -->
+    <div class="space-y-1 bg-slate-950/70 border border-slate-800 rounded-xl p-2.5">
+      <div class="flex items-center justify-between">
+        <span class="font-mono text-[10px] uppercase text-slate-400">Tempo / Pitch (BPM)</span>
+        <div class="flex items-center gap-1.5">
+          <span id="ctxBpmValue" class="font-mono font-bold text-violet-300">120.0 BPM</span>
+          <button id="ctxBpmResetBtn" type="button" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-[10px] text-slate-200 cursor-pointer">Real</button>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="ctxBpmMinusBtn" type="button" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono font-bold cursor-pointer">-</button>
+        <input id="ctxBpmSlider" type="range" min="60" max="180" step="0.5" value="120" class="studio-slider flex-1" />
+        <button id="ctxBpmPlusBtn" type="button" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono font-bold cursor-pointer">+</button>
+      </div>
+    </div>
+
+    <!-- 3 Puntos CUE Independientes -->
+    <div class="space-y-2 bg-slate-950/70 border border-slate-800 rounded-xl p-2.5">
+      <div class="flex items-center justify-between">
+        <span class="font-mono text-[10px] uppercase text-amber-300 font-bold">3 Puntos CUE (Z/X/C en L · Num 1/2/3 en R)</span>
+        <span id="ctxCueLoopStatus" class="font-mono text-[10px] text-slate-400">Mudo</span>
+      </div>
+
+      <div class="grid grid-cols-3 gap-1.5">
+        <button
+          type="button"
+          data-cue-slot="0"
+          class="ctx-cue-slot-tab py-1 px-2 rounded-lg font-mono font-extrabold text-[11px] bg-amber-500 text-slate-950 cursor-pointer transition"
+        >
+          CUE 1: 0.00s
+        </button>
+        <button
+          type="button"
+          data-cue-slot="1"
+          class="ctx-cue-slot-tab py-1 px-2 rounded-lg font-mono font-bold text-[11px] bg-slate-800 text-slate-300 hover:bg-slate-700 cursor-pointer transition"
+        >
+          CUE 2: --
+        </button>
+        <button
+          type="button"
+          data-cue-slot="2"
+          class="ctx-cue-slot-tab py-1 px-2 rounded-lg font-mono font-bold text-[11px] bg-slate-800 text-slate-300 hover:bg-slate-700 cursor-pointer transition"
+        >
+          CUE 3: --
+        </button>
+      </div>
+
+      <input id="ctxCueSlider" type="range" min="0" max="60" step="0.005" value="0" class="studio-slider w-full" />
+
+      <div class="flex items-center gap-1.5">
+        <input
+          id="ctxCueNumber"
+          type="number"
+          min="0"
+          step="0.01"
+          value="0.00"
+          class="w-24 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2 py-1 font-mono text-xs text-amber-300 outline-none"
+        />
+        <span class="font-mono text-[10px] text-slate-400">Muestreo:</span>
+        <input
+          id="ctxCueLoopMsInput"
+          type="number"
+          min="50"
+          max="10000"
+          step="50"
+          value="1500"
+          class="w-20 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-1.5 py-1 font-mono text-xs text-amber-200 outline-none"
+        />
+        <span class="font-mono text-[10px] text-slate-400">ms</span>
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <button
+          id="ctxCaptureCurrentPosBtn"
+          type="button"
+          class="flex-1 py-1 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-200 font-semibold cursor-pointer"
+        >
+          Pos. Actual
+        </button>
+        <button
+          id="ctxClearSingleCueBtn"
+          type="button"
+          title="Borrar este punto CUE"
+          class="py-1 px-2 rounded-lg bg-slate-800 hover:bg-rose-900 text-rose-300 font-semibold cursor-pointer"
+        >
+          Quitar
+        </button>
+        <button
+          id="ctxSaveCueBtn"
+          type="button"
+          class="flex-1 py-1 px-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold cursor-pointer"
+        >
+          Guardar CUE
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Apartado Global: FADES (Fade In, Fade Out y Fades Interactivos con Shift + Tecla) -->
+  <div
+    id="fadesConfigModal"
+    class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Apartado global de Fades"
+  >
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full max-h-[92vh] overflow-y-auto p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h2 class="text-base font-extrabold text-white">Fades Globales y Fades Interactivos</h2>
+          <p class="text-xs text-slate-400">Configurá Fade In, Fade Out y el Fade Interactivo con Shift + Tecla.</p>
+        </div>
+        <button
+          id="closeFadesModalBtn"
+          type="button"
+          class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 cursor-pointer"
+        >
+          Cerrar
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5">
+        <button
+          id="selectCutModeBtn"
+          type="button"
+          class="p-3 rounded-xl border text-left transition cursor-pointer bg-emerald-500/15 border-emerald-400 text-emerald-100"
+        >
+          <div class="font-mono font-extrabold text-xs">CORTE AUTOMÁTICO</div>
+          <div class="text-[11px] text-slate-300 mt-0.5">Entrada y corte instantáneos al aire.</div>
+        </button>
+
+        <button
+          id="selectFadeModeBtn"
+          type="button"
+          class="p-3 rounded-xl border text-left transition cursor-pointer bg-slate-950 border-slate-700 text-slate-300 hover:border-slate-500"
+        >
+          <div class="font-mono font-extrabold text-xs">FADES CONFIGURABLES</div>
+          <div class="text-[11px] text-slate-300 mt-0.5">Aplica Fade In al entrar y Fade Out al cortar o cambiar.</div>
+        </button>
+      </div>
+
+      <!-- Fade In Global -->
+      <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="font-mono text-xs font-bold text-sky-300">Fade In Global (Entrada en ms)</span>
+          <div class="flex items-center gap-1">
+            <input
+              id="fadeInMsInput"
+              type="number"
+              min="0"
+              max="10000"
+              step="10"
+              value="250"
+              class="w-20 bg-slate-900 border border-slate-700 rounded-md px-2 py-0.5 font-mono text-right text-xs text-sky-200 outline-none"
+            />
+            <span class="font-mono text-xs text-slate-400">ms</span>
+          </div>
+        </div>
+        <input id="fadeInMsSlider" type="range" min="0" max="10000" step="10" value="250" class="studio-slider w-full" />
+        <div class="flex flex-wrap gap-1.5 pt-1">
+          <button type="button" data-fade-in-preset="0" class="fade-in-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-[10px] cursor-pointer">0ms</button>
+          <button type="button" data-fade-in-preset="100" class="fade-in-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-[10px] cursor-pointer">100ms</button>
+          <button type="button" data-fade-in-preset="250" class="fade-in-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-[10px] cursor-pointer">250ms</button>
+          <button type="button" data-fade-in-preset="500" class="fade-in-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-[10px] cursor-pointer">500ms</button>
+          <button type="button" data-fade-in-preset="1000" class="fade-in-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-[10px] cursor-pointer">1000ms</button>
+          <button type="button" data-fade-in-preset="2000" class="fade-in-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-[10px] cursor-pointer">2000ms</button>
+        </div>
+      </div>
+
+      <!-- Fade Out Global -->
+      <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="font-mono text-xs font-bold text-amber-300">Fade Out Global (Salida / Crossfade en ms)</span>
+          <div class="flex items-center gap-1">
+            <input
+              id="fadeOutMsInput"
+              type="number"
+              min="0"
+              max="10000"
+              step="10"
+              value="500"
+              class="w-20 bg-slate-900 border border-slate-700 rounded-md px-2 py-0.5 font-mono text-right text-xs text-amber-200 outline-none"
+            />
+            <span class="font-mono text-xs text-slate-400">ms</span>
+          </div>
+        </div>
+        <input id="fadeOutMsSlider" type="range" min="0" max="10000" step="10" value="500" class="studio-slider w-full" />
+        <div class="flex flex-wrap gap-1.5 pt-1">
+          <button type="button" data-fade-out-preset="0" class="fade-out-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-[10px] cursor-pointer">0ms</button>
+          <button type="button" data-fade-out-preset="250" class="fade-out-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-[10px] cursor-pointer">250ms</button>
+          <button type="button" data-fade-out-preset="500" class="fade-out-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-[10px] cursor-pointer">500ms</button>
+          <button type="button" data-fade-out-preset="1000" class="fade-out-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-[10px] cursor-pointer">1000ms</button>
+          <button type="button" data-fade-out-preset="2000" class="fade-out-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-[10px] cursor-pointer">2000ms</button>
+          <button type="button" data-fade-out-preset="4000" class="fade-out-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-[10px] cursor-pointer">4000ms</button>
+        </div>
+      </div>
+
+      <!-- Fade Interactivo (Shift + Tecla del jingle -> baja gradualmente a -∞ dB / silencio y hace Stop) -->
+      <div class="bg-slate-950/90 border border-emerald-500/35 rounded-xl p-3.5 space-y-2">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <span class="font-mono text-xs font-extrabold text-emerald-300">Fade Interactivo (Shift + Tecla → 0 / Silencio + Stop)</span>
+            <p class="text-[11px] text-slate-300 mt-0.5">
+              Ej.: disparás un jingle con <kbd class="px-1 py-0.5 rounded bg-slate-800 text-white font-mono text-[10px]">1</kbd> y al apretar <kbd class="px-1 py-0.5 rounded bg-slate-800 text-emerald-300 font-mono text-[10px]">Shift + 1</kbd> baja suavemente hasta silencio en este tiempo y se detiene.
+            </p>
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <input
+              id="interactiveFadeMsInput"
+              type="number"
+              min="50"
+              max="15000"
+              step="50"
+              value="1500"
+              class="w-20 bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-md px-2 py-0.5 font-mono text-right text-xs text-emerald-200 outline-none"
+            />
+            <span class="font-mono text-xs text-slate-400">ms</span>
+          </div>
+        </div>
+        <input id="interactiveFadeMsSlider" type="range" min="50" max="15000" step="50" value="1500" class="studio-slider w-full" />
+        <div class="flex flex-wrap gap-1.5 pt-1">
+          <button type="button" data-interactive-fade-preset="300" class="interactive-fade-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-[10px] cursor-pointer">300ms</button>
+          <button type="button" data-interactive-fade-preset="800" class="interactive-fade-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-[10px] cursor-pointer">800ms</button>
+          <button type="button" data-interactive-fade-preset="1500" class="interactive-fade-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-[10px] cursor-pointer">1500ms</button>
+          <button type="button" data-interactive-fade-preset="3000" class="interactive-fade-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-[10px] cursor-pointer">3000ms</button>
+          <button type="button" data-interactive-fade-preset="5000" class="interactive-fade-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-[10px] cursor-pointer">5000ms</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Placas y Canales de Salida + Deslizable 0 a 10 seg en MILISEGUNDOS -->
+  <div
+    id="audioRoutingModal"
+    class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Enrutamiento de placas y canales"
+  >
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full max-h-[92vh] overflow-y-auto p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h2 class="text-base font-extrabold text-white">Enrutamiento de Placas, Canales y Tiempo en Milisegundos</h2>
+          <p class="text-xs text-slate-400">Asigna placa de salida, canal físico y deslizable de 0 a 10 segundos en milisegundos.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            id="detectAudioDevicesBtn"
+            type="button"
+            class="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold cursor-pointer"
+          >
+            Detectar Placas
+          </button>
+          <button
+            id="closeAudioModalBtn"
+            type="button"
+            class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 cursor-pointer"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <!-- Canal L -->
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-extrabold text-xs text-sky-300">BOTONERA 1 · CANAL L</span>
+            <button
+              id="modalTestBtn-L"
+              type="button"
+              class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[11px] font-mono text-sky-200 cursor-pointer"
+            >
+              Probar L
+            </button>
+          </div>
+          <div class="space-y-1">
+            <label for="deviceSelect-L" class="block font-mono text-[10px] uppercase text-slate-400">Placa de audio</label>
+            <select id="deviceSelect-L" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none"></select>
+          </div>
+          <div class="space-y-1">
+            <label for="channelSelect-L" class="block font-mono text-[10px] uppercase text-slate-400">Modo de canal</label>
+            <select id="channelSelect-L" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none"></select>
+          </div>
+        </div>
+
+        <!-- Canal R -->
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-extrabold text-xs text-indigo-300">BOTONERA 2 · CANAL R</span>
+            <button
+              id="modalTestBtn-R"
+              type="button"
+              class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[11px] font-mono text-indigo-200 cursor-pointer"
+            >
+              Probar R
+            </button>
+          </div>
+          <div class="space-y-1">
+            <label for="deviceSelect-R" class="block font-mono text-[10px] uppercase text-slate-400">Placa de audio</label>
+            <select id="deviceSelect-R" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none"></select>
+          </div>
+          <div class="space-y-1">
+            <label for="channelSelect-R" class="block font-mono text-[10px] uppercase text-slate-400">Modo de canal</label>
+            <select id="channelSelect-R" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none"></select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deslizable de 0 a 10 segundos expresado en MILISEGUNDOS -->
+      <div class="bg-slate-950/85 border border-sky-500/30 rounded-xl p-3.5 space-y-2.5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span class="font-mono text-xs font-extrabold text-sky-300">Paso de Adelanto / Retroceso (0 a 10 seg en milisegundos)</span>
+            <p class="text-[11px] text-slate-400">Configura el salto de las flechas ← / → entre 0 ms y 10000 ms (10 segundos).</p>
+          </div>
+          <div class="flex items-center gap-1.5 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1">
+            <input
+              id="modalSeekStepNumber"
+              type="number"
+              min="0"
+              max="10000"
+              step="10"
+              value="500"
+              class="w-20 bg-transparent font-mono font-extrabold text-right text-sm text-amber-300 outline-none"
+            />
+            <span class="font-mono text-xs font-bold text-slate-300">ms</span>
+            <span id="modalSeekSecEquivalent" class="font-mono text-[11px] text-slate-400">(0.50 s)</span>
+          </div>
+        </div>
+
+        <input
+          id="modalSeekStepSlider"
+          type="range"
+          min="0"
+          max="10000"
+          step="10"
+          value="500"
+          class="studio-slider w-full"
+        />
+
+        <div class="flex flex-wrap items-center justify-between gap-1 text-[10px] font-mono text-slate-400">
+          <span>0 ms (0 s)</span>
+          <div class="flex flex-wrap gap-1.5">
+            <button type="button" data-modal-seek-ms="100" class="modal-seek-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer">100 ms</button>
+            <button type="button" data-modal-seek-ms="500" class="modal-seek-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer">500 ms</button>
+            <button type="button" data-modal-seek-ms="1000" class="modal-seek-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer">1000 ms</button>
+            <button type="button" data-modal-seek-ms="2500" class="modal-seek-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer">2500 ms</button>
+            <button type="button" data-modal-seek-ms="5000" class="modal-seek-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer">5000 ms</button>
+            <button type="button" data-modal-seek-ms="10000" class="modal-seek-preset px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer">10000 ms</button>
+          </div>
+          <span>10000 ms (10 s)</span>
+        </div>
+      </div>
+
+      <!-- Diagnóstico de dispositivos -->
+      <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-2 text-xs">
+        <div class="flex flex-wrap items-center justify-between gap-2 font-mono text-[11px] text-slate-400">
+          <span>Salidas detectadas: <strong id="diagDeviceCount" class="text-white">0</strong></span>
+          <span>setSinkId: <strong id="diagSinkCapability" class="text-emerald-300">verificando</strong></span>
+          <span>Permiso: <strong id="diagPermStatus" class="text-amber-300">pendiente</strong></span>
+        </div>
+        <div id="diagDeviceList" class="divide-y divide-slate-800/80 max-h-36 overflow-y-auto font-mono text-[11px] text-slate-300">
+          <div class="py-1.5 text-slate-400">Pulsa "Detectar Placas" para listar salidas de audio.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Instalar como Aplicación en Windows -->
+  <div
+    id="installWindowsModal"
+    class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Instalar como aplicación en Windows"
+  >
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h2 class="text-base font-extrabold text-white">Instalar como App en Windows</h2>
+        <button
+          id="closeInstallModalBtn"
+          type="button"
+          class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 cursor-pointer"
+        >
+          Cerrar
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs text-slate-300 leading-relaxed">
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-1">
+          <div class="font-bold text-sky-300">Microsoft Edge en Windows</div>
+          <p>
+            Abre la página y ve a <strong>Menú (⋯) &gt; Aplicaciones &gt; Instalar este sitio como aplicación</strong>.
+          </p>
+        </div>
+
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-1">
+          <div class="font-bold text-amber-300">Google Chrome en Windows</div>
+          <p>
+            Haz clic en el icono de instalar en la barra de direcciones o ve a <strong>Menú (⋮) &gt; Guardar y compartir &gt; Instalar página como aplicación</strong>.
+          </p>
+        </div>
+
+        <p class="text-[11px] text-slate-400">
+          Todas las configuraciones (fades, colores, modos Normal/Single/Sampler, 3 puntos CUE, bucles, BPM, limitadores, placas y audios) se guardan en tu carpeta local elegida y en la caché del navegador.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notificación flotante no intrusiva -->
+  <div
+    id="toastContainer"
+    class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-sm"
+    aria-live="polite"
+  ></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
